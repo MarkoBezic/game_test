@@ -1,9 +1,10 @@
 // ─── Constants ────────────────────────────────────────────────────────────────
-const TILE = 20;          // pixels per tile
+const TILE = 26;          // pixels per tile
 const COLS = 28;
 const ROWS = 31;
-const W = COLS * TILE;    // 560
-const H = ROWS * TILE;    // 620
+const W = COLS * TILE;    // 728
+const H = ROWS * TILE;    // 806
+const S = TILE / 20;      // character detail scale factor
 
 const T = { WALL: 0, DOT: 1, POWER: 2, EMPTY: 3, HOUSE: 4 };
 
@@ -141,7 +142,7 @@ function drawWallTile(c, r, px, py) {
   // corridor junction, so the wall block's corner curves away from the wall
   // rather than into it.  Each arc is centered at the shared tile corner and
   // points in the opposite direction from the current code (outward, not inward).
-  const R = TILE / 2;
+  const R = Math.round(TILE / 3);
   ctx.fillStyle = '#1a1aff';
   if (!n && !w) { ctx.beginPath(); ctx.moveTo(px,        py       ); ctx.arc(px,        py,        R, Math.PI,          3 * Math.PI / 2); ctx.closePath(); ctx.fill(); }
   if (!n && !e) { ctx.beginPath(); ctx.moveTo(px + TILE, py       ); ctx.arc(px + TILE, py,        R, 3 * Math.PI / 2,  2 * Math.PI    ); ctx.closePath(); ctx.fill(); }
@@ -200,13 +201,13 @@ function drawGhost(ghost, idx) {
   // Top half circle
   ctx.arc(cx, cy, r, Math.PI, 0);
   // Right side down
-  ctx.lineTo(cx + r, py + TILE - 2);
+  ctx.lineTo(cx + r, py + TILE - 2 * S);
   // Wavy bottom
   const segs = 3;
   const segW = (r * 2) / segs;
   for (let i = segs; i >= 0; i--) {
     const bx = cx - r + i * segW;
-    const by = (i % 2 === 0) ? py + TILE - 2 : py + TILE - 6;
+    const by = (i % 2 === 0) ? py + TILE - 2 * S : py + TILE - 6 * S;
     ctx.lineTo(bx, by);
   }
   ctx.closePath();
@@ -216,8 +217,8 @@ function drawGhost(ghost, idx) {
     const flash = ghost.frightenedTimer < 2000 && Math.floor(ghost.frightenedTimer / 250) % 2 === 0;
     // Simple face
     ctx.fillStyle = flash ? '#000' : '#fff';
-    ctx.beginPath(); ctx.arc(cx - 4, cy - 2, 2, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(cx + 4, cy - 2, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx - 4 * S, cy - 2 * S, 2 * S, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 4 * S, cy - 2 * S, 2 * S, 0, Math.PI * 2); ctx.fill();
   } else {
     drawGhostEyes(cx, cy, ghost.dir);
   }
@@ -226,19 +227,19 @@ function drawGhost(ghost, idx) {
 function drawGhostEyes(cx, cy, dir) {
   // White of eye
   ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.ellipse(cx - 4, cy - 2, 3, 4, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(cx + 4, cy - 2, 3, 4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx - 4 * S, cy - 2 * S, 3 * S, 4 * S, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx + 4 * S, cy - 2 * S, 3 * S, 4 * S, 0, 0, Math.PI * 2); ctx.fill();
 
   // Pupil offset by direction
   let dx = 0, dy = 0;
-  if (dir === DIR.LEFT)  dx = -2;
-  if (dir === DIR.RIGHT) dx =  2;
-  if (dir === DIR.UP)    dy = -2;
-  if (dir === DIR.DOWN)  dy =  2;
+  if (dir === DIR.LEFT)  dx = -2 * S;
+  if (dir === DIR.RIGHT) dx =  2 * S;
+  if (dir === DIR.UP)    dy = -2 * S;
+  if (dir === DIR.DOWN)  dy =  2 * S;
 
   ctx.fillStyle = '#00f';
-  ctx.beginPath(); ctx.arc(cx - 4 + dx, cy - 2 + dy, 1.5, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(cx + 4 + dx, cy - 2 + dy, 1.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx - 4 * S + dx, cy - 2 * S + dy, 1.5 * S, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + 4 * S + dx, cy - 2 * S + dy, 1.5 * S, 0, Math.PI * 2); ctx.fill();
 }
 
 function drawScorePopup(popup) {
