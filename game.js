@@ -1,10 +1,9 @@
 // ─── Constants ────────────────────────────────────────────────────────────────
-const TILE = 26;          // pixels per tile
+const TILE = 20;          // pixels per tile
 const COLS = 28;
 const ROWS = 31;
-const W = COLS * TILE;    // 728
-const H = ROWS * TILE;    // 806
-const S = TILE / 20;      // character detail scale factor
+const W = COLS * TILE;    // 560
+const H = ROWS * TILE;    // 620
 
 const T = { WALL: 0, DOT: 1, POWER: 2, EMPTY: 3, HOUSE: 4 };
 
@@ -128,26 +127,25 @@ function drawMaze() {
 }
 
 function drawWallTile(c, r, px, py) {
-  // Solid blue fill
   ctx.fillStyle = '#1a1aff';
   ctx.fillRect(px, py, TILE, TILE);
+
+  // Draw inner rounded corner / edge highlights to give classic look
+  ctx.strokeStyle = '#4444ff';
+  ctx.lineWidth = 2;
 
   const n = isWall(c, r - 1);
   const s = isWall(c, r + 1);
   const e = isWall(c + 1, r);
   const w = isWall(c - 1, r);
 
-  // Round convex wall corners (credit-card style): where two perpendicular open
-  // sides meet, draw a blue quarter-circle arc that protrudes outward into the
-  // corridor junction, so the wall block's corner curves away from the wall
-  // rather than into it.  Each arc is centered at the shared tile corner and
-  // points in the opposite direction from the current code (outward, not inward).
-  const R = Math.round(TILE / 3);
-  ctx.fillStyle = '#1a1aff';
-  if (!n && !w) { ctx.beginPath(); ctx.moveTo(px,        py       ); ctx.arc(px,        py,        R, Math.PI,          3 * Math.PI / 2); ctx.closePath(); ctx.fill(); }
-  if (!n && !e) { ctx.beginPath(); ctx.moveTo(px + TILE, py       ); ctx.arc(px + TILE, py,        R, 3 * Math.PI / 2,  2 * Math.PI    ); ctx.closePath(); ctx.fill(); }
-  if (!s && !w) { ctx.beginPath(); ctx.moveTo(px,        py + TILE); ctx.arc(px,        py + TILE, R, Math.PI / 2,      Math.PI        ); ctx.closePath(); ctx.fill(); }
-  if (!s && !e) { ctx.beginPath(); ctx.moveTo(px + TILE, py + TILE); ctx.arc(px + TILE, py + TILE, R, 0,                Math.PI / 2    ); ctx.closePath(); ctx.fill(); }
+  // Draw a simple inner border line toward open spaces
+  ctx.beginPath();
+  if (!n) { ctx.moveTo(px + 2, py + 2); ctx.lineTo(px + TILE - 2, py + 2); }
+  if (!s) { ctx.moveTo(px + 2, py + TILE - 2); ctx.lineTo(px + TILE - 2, py + TILE - 2); }
+  if (!w) { ctx.moveTo(px + 2, py + 2); ctx.lineTo(px + 2, py + TILE - 2); }
+  if (!e) { ctx.moveTo(px + TILE - 2, py + 2); ctx.lineTo(px + TILE - 2, py + TILE - 2); }
+  ctx.stroke();
 }
 
 function drawPacMan(pac) {
@@ -201,13 +199,13 @@ function drawGhost(ghost, idx) {
   // Top half circle
   ctx.arc(cx, cy, r, Math.PI, 0);
   // Right side down
-  ctx.lineTo(cx + r, py + TILE - 2 * S);
+  ctx.lineTo(cx + r, py + TILE - 2);
   // Wavy bottom
   const segs = 3;
   const segW = (r * 2) / segs;
   for (let i = segs; i >= 0; i--) {
     const bx = cx - r + i * segW;
-    const by = (i % 2 === 0) ? py + TILE - 2 * S : py + TILE - 6 * S;
+    const by = (i % 2 === 0) ? py + TILE - 2 : py + TILE - 6;
     ctx.lineTo(bx, by);
   }
   ctx.closePath();
@@ -217,8 +215,8 @@ function drawGhost(ghost, idx) {
     const flash = ghost.frightenedTimer < 2000 && Math.floor(ghost.frightenedTimer / 250) % 2 === 0;
     // Simple face
     ctx.fillStyle = flash ? '#000' : '#fff';
-    ctx.beginPath(); ctx.arc(cx - 4 * S, cy - 2 * S, 2 * S, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(cx + 4 * S, cy - 2 * S, 2 * S, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx - 4, cy - 2, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 4, cy - 2, 2, 0, Math.PI * 2); ctx.fill();
   } else {
     drawGhostEyes(cx, cy, ghost.dir);
   }
@@ -227,19 +225,19 @@ function drawGhost(ghost, idx) {
 function drawGhostEyes(cx, cy, dir) {
   // White of eye
   ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.ellipse(cx - 4 * S, cy - 2 * S, 3 * S, 4 * S, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(cx + 4 * S, cy - 2 * S, 3 * S, 4 * S, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx - 4, cy - 2, 3, 4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx + 4, cy - 2, 3, 4, 0, 0, Math.PI * 2); ctx.fill();
 
   // Pupil offset by direction
   let dx = 0, dy = 0;
-  if (dir === DIR.LEFT)  dx = -2 * S;
-  if (dir === DIR.RIGHT) dx =  2 * S;
-  if (dir === DIR.UP)    dy = -2 * S;
-  if (dir === DIR.DOWN)  dy =  2 * S;
+  if (dir === DIR.LEFT)  dx = -2;
+  if (dir === DIR.RIGHT) dx =  2;
+  if (dir === DIR.UP)    dy = -2;
+  if (dir === DIR.DOWN)  dy =  2;
 
   ctx.fillStyle = '#00f';
-  ctx.beginPath(); ctx.arc(cx - 4 * S + dx, cy - 2 * S + dy, 1.5 * S, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(cx + 4 * S + dx, cy - 2 * S + dy, 1.5 * S, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx - 4 + dx, cy - 2 + dy, 1.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + 4 + dx, cy - 2 + dy, 1.5, 0, Math.PI * 2); ctx.fill();
 }
 
 function drawScorePopup(popup) {
