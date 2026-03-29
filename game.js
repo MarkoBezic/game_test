@@ -350,7 +350,8 @@ function updatePacMan(pac, dt) {
   if (d.x !== 0) {
     const edgeCol = d.x > 0 ? Math.floor(nx + 0.5) : Math.ceil(nx - 0.5);
     if (!isPassable(edgeCol, Math.round(ny))) {
-      pac.x = col; // snap back
+      pac.x = col; // snap to grid and stop until a new direction is pressed
+      pac.dir = DIR.NONE;
     } else {
       pac.x = nx;
     }
@@ -359,6 +360,7 @@ function updatePacMan(pac, dt) {
     const edgeRow = d.y > 0 ? Math.floor(ny + 0.5) : Math.ceil(ny - 0.5);
     if (!isPassable(Math.round(nx), edgeRow)) {
       pac.y = row;
+      pac.dir = DIR.NONE;
     } else {
       pac.y = ny;
     }
