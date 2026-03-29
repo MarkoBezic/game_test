@@ -57,8 +57,6 @@ let mazeData = [];
 let totalDots = 0;
 let dotsEaten = 0;
 
-let wallPolygons = [];
-
 function initMaze() {
   mazeData = RAW_MAZE.map(row => [...row]);
   totalDots = 0;
@@ -66,7 +64,6 @@ function initMaze() {
   for (let r = 0; r < ROWS; r++)
     for (let c = 0; c < COLS; c++)
       if (mazeData[r][c] === T.DOT || mazeData[r][c] === T.POWER) totalDots++;
-  wallPolygons = buildWallPolygons();
 }
 
 function getTile(col, row) {
@@ -110,7 +107,9 @@ function drawMaze() {
       const px = c * TILE;
       const py = r * TILE;
 
-      if (t === T.DOT) {
+      if (t === T.WALL) {
+        drawWallTile(c, r, px, py);
+      } else if (t === T.DOT) {
         ctx.fillStyle = '#FFE4B5';
         ctx.beginPath();
         ctx.arc(px + TILE / 2, py + TILE / 2, 2, 0, Math.PI * 2);
@@ -125,94 +124,28 @@ function drawMaze() {
       }
     }
   }
-
-  // Draw wall outlines
-  ctx.strokeStyle = '#1a1aff';
-  ctx.lineWidth = 3;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  for (const poly of wallPolygons) {
-    strokeRoundedPoly(poly, 4);
-    ctx.stroke();
-  }
 }
 
-// Non-wrapping wall check used only for building wall outlines
-function isWallStrict(c, r) {
-  if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return true;
-  return mazeData[r][c] === T.WALL;
-}
+function drawWallTile(c, r, px, py) {
+  // Solid blue fill
+  ctx.fillStyle = '#1a1aff';
+  ctx.fillRect(px, py, TILE, TILE);
 
-// Trace the boundary of all wall regions as closed directed polygons.
-// Edges are directed clockwise around each wall blob (open space on the left).
-function buildWallPolygons() {
-  const edgeMap = new Map();
+  const n = isWall(c, r - 1);
+  const s = isWall(c, r + 1);
+  const e = isWall(c + 1, r);
+  const w = isWall(c - 1, r);
 
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (mazeData[r][c] !== T.WALL) continue;
-      const px = c * TILE, py = r * TILE;
-      const tx = px + TILE,  ty = py + TILE;
-      // open north → edge goes left-to-right along top
-      if (!isWallStrict(c, r - 1)) edgeMap.set(`${px},${py}`,  { x2: tx, y2: py });
-      // open south → edge goes right-to-left along bottom
-      if (!isWallStrict(c, r + 1)) edgeMap.set(`${tx},${ty}`,  { x2: px, y2: ty });
-      // open west  → edge goes bottom-to-top along left
-      if (!isWallStrict(c - 1, r)) edgeMap.set(`${px},${ty}`,  { x2: px, y2: py });
-      // open east  → edge goes top-to-bottom along right
-      if (!isWallStrict(c + 1, r)) edgeMap.set(`${tx},${py}`,  { x2: tx, y2: ty });
-    }
-  }
-
-  const visited = new Set();
-  const polygons = [];
-
-  for (const startKey of edgeMap.keys()) {
-    if (visited.has(startKey)) continue;
-    const poly = [];
-    let curKey = startKey;
-    while (!visited.has(curKey) && edgeMap.has(curKey)) {
-      visited.add(curKey);
-      const comma = curKey.indexOf(',');
-      poly.push({ x: +curKey.slice(0, comma), y: +curKey.slice(comma + 1) });
-      const e = edgeMap.get(curKey);
-      curKey = `${e.x2},${e.y2}`;
-    }
-    if (poly.length > 2) polygons.push(poly);
-  }
-
-  return polygons;
-}
-
-// Stroke a closed polygon with rounded corners of the given radius.
-function strokeRoundedPoly(poly, radius) {
-  const n = poly.length;
-  // For each vertex compute the entry point (r px before it) and exit point (r px after it)
-  const corners = poly.map((curr, i) => {
-    const prev = poly[(i - 1 + n) % n];
-    const next = poly[(i + 1) % n];
-    const dxi = prev.x - curr.x, dyi = prev.y - curr.y;
-    const li  = Math.sqrt(dxi * dxi + dyi * dyi);
-    const dxo = next.x - curr.x, dyo = next.y - curr.y;
-    const lo  = Math.sqrt(dxo * dxo + dyo * dyo);
-    const r   = Math.min(radius, li / 2, lo / 2);
-    return {
-      entry:  { x: curr.x + dxi / li * r, y: curr.y + dyi / li * r },
-      vertex: curr,
-      exit:   { x: curr.x + dxo / lo * r, y: curr.y + dyo / lo * r },
-      r
-    };
-  });
-
-  ctx.beginPath();
-  ctx.moveTo(corners[0].entry.x, corners[0].entry.y);
-  for (let i = 0; i < n; i++) {
-    const cr  = corners[i];
-    const nxt = corners[(i + 1) % n];
-    ctx.arcTo(cr.vertex.x, cr.vertex.y, cr.exit.x, cr.exit.y, cr.r);
-    ctx.lineTo(nxt.entry.x, nxt.entry.y);
-  }
-  ctx.closePath();
+  // Carve rounded corridor corners: where two perpendicular open sides meet on
+  // this wall tile, cut out a black quarter-circle arc so the corridor turn is
+  // smooth instead of sharp.  The arc is centered at the tile corner shared by
+  // both open sides and has radius TILE/2, keeping it entirely inside this tile.
+  const R = TILE / 2;
+  ctx.fillStyle = '#000';
+  if (!n && !w) { ctx.beginPath(); ctx.moveTo(px,        py       ); ctx.arc(px,        py,        R, 0,           Math.PI / 2      ); ctx.closePath(); ctx.fill(); }
+  if (!n && !e) { ctx.beginPath(); ctx.moveTo(px + TILE, py       ); ctx.arc(px + TILE, py,        R, Math.PI / 2, Math.PI          ); ctx.closePath(); ctx.fill(); }
+  if (!s && !w) { ctx.beginPath(); ctx.moveTo(px,        py + TILE); ctx.arc(px,        py + TILE, R, -Math.PI / 2, 0              ); ctx.closePath(); ctx.fill(); }
+  if (!s && !e) { ctx.beginPath(); ctx.moveTo(px + TILE, py + TILE); ctx.arc(px + TILE, py + TILE, R, Math.PI,     3 * Math.PI / 2  ); ctx.closePath(); ctx.fill(); }
 }
 
 function drawPacMan(pac) {
