@@ -153,11 +153,11 @@ function drawPacMan(pac) {
   const cy = pac.y * TILE + TILE / 2;
   const r = TILE / 2 - 1;
 
-  // Rotation based on direction
+  // Rotation based on last non-NONE direction so facing is preserved when frozen
   let rot = 0;
-  if (pac.dir === DIR.LEFT)  rot = Math.PI;
-  if (pac.dir === DIR.UP)    rot = -Math.PI / 2;
-  if (pac.dir === DIR.DOWN)  rot = Math.PI / 2;
+  if (pac.facing === DIR.LEFT)  rot = Math.PI;
+  if (pac.facing === DIR.UP)    rot = -Math.PI / 2;
+  if (pac.facing === DIR.DOWN)  rot = Math.PI / 2;
 
   const mouth = pac.mouthAngle;
 
@@ -308,6 +308,7 @@ function makePacMan() {
     x: PAC_START.col,
     y: PAC_START.row,
     dir: DIR.LEFT,
+    facing: DIR.LEFT,  // last non-NONE direction, used for drawing while frozen
     nextDir: DIR.LEFT,
     speed: 0.006,
     mouthAngle: 0.25,
@@ -339,6 +340,7 @@ function updatePacMan(pac, dt) {
       const nr = row + nd.y;
       if (isPassable(nc, nr)) {
         pac.dir = nd;
+        pac.facing = nd;
         if (nd.x !== 0) pac.y = row; else pac.x = col;
       }
     }
