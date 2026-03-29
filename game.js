@@ -317,10 +317,12 @@ function makePacMan() {
 }
 
 function updatePacMan(pac, dt) {
-  // Animate mouth
-  pac.mouthAngle += pac.mouthDir * 0.008 * dt;
-  if (pac.mouthAngle > 0.4) { pac.mouthAngle = 0.4; pac.mouthDir = -1; }
-  if (pac.mouthAngle < 0.02) { pac.mouthAngle = 0.02; pac.mouthDir = 1; }
+  // Animate mouth only while moving
+  if (pac.dir !== DIR.NONE) {
+    pac.mouthAngle += pac.mouthDir * 0.008 * dt;
+    if (pac.mouthAngle > 0.4) { pac.mouthAngle = 0.4; pac.mouthDir = -1; }
+    if (pac.mouthAngle < 0.02) { pac.mouthAngle = 0.02; pac.mouthDir = 1; }
+  }
 
   const speed = pac.speed * dt;
 
