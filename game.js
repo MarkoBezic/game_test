@@ -136,16 +136,17 @@ function drawWallTile(c, r, px, py) {
   const e = isWall(c + 1, r);
   const w = isWall(c - 1, r);
 
-  // Carve rounded corridor corners: where two perpendicular open sides meet on
-  // this wall tile, cut out a black quarter-circle arc so the corridor turn is
-  // smooth instead of sharp.  The arc is centered at the tile corner shared by
-  // both open sides and has radius TILE/2, keeping it entirely inside this tile.
+  // Round convex wall corners (credit-card style): where two perpendicular open
+  // sides meet, draw a blue quarter-circle arc that protrudes outward into the
+  // corridor junction, so the wall block's corner curves away from the wall
+  // rather than into it.  Each arc is centered at the shared tile corner and
+  // points in the opposite direction from the current code (outward, not inward).
   const R = TILE / 2;
-  ctx.fillStyle = '#000';
-  if (!n && !w) { ctx.beginPath(); ctx.moveTo(px,        py       ); ctx.arc(px,        py,        R, 0,           Math.PI / 2      ); ctx.closePath(); ctx.fill(); }
-  if (!n && !e) { ctx.beginPath(); ctx.moveTo(px + TILE, py       ); ctx.arc(px + TILE, py,        R, Math.PI / 2, Math.PI          ); ctx.closePath(); ctx.fill(); }
-  if (!s && !w) { ctx.beginPath(); ctx.moveTo(px,        py + TILE); ctx.arc(px,        py + TILE, R, -Math.PI / 2, 0              ); ctx.closePath(); ctx.fill(); }
-  if (!s && !e) { ctx.beginPath(); ctx.moveTo(px + TILE, py + TILE); ctx.arc(px + TILE, py + TILE, R, Math.PI,     3 * Math.PI / 2  ); ctx.closePath(); ctx.fill(); }
+  ctx.fillStyle = '#1a1aff';
+  if (!n && !w) { ctx.beginPath(); ctx.moveTo(px,        py       ); ctx.arc(px,        py,        R, Math.PI,          3 * Math.PI / 2); ctx.closePath(); ctx.fill(); }
+  if (!n && !e) { ctx.beginPath(); ctx.moveTo(px + TILE, py       ); ctx.arc(px + TILE, py,        R, 3 * Math.PI / 2,  2 * Math.PI    ); ctx.closePath(); ctx.fill(); }
+  if (!s && !w) { ctx.beginPath(); ctx.moveTo(px,        py + TILE); ctx.arc(px,        py + TILE, R, Math.PI / 2,      Math.PI        ); ctx.closePath(); ctx.fill(); }
+  if (!s && !e) { ctx.beginPath(); ctx.moveTo(px + TILE, py + TILE); ctx.arc(px + TILE, py + TILE, R, 0,                Math.PI / 2    ); ctx.closePath(); ctx.fill(); }
 }
 
 function drawPacMan(pac) {
